@@ -27,6 +27,8 @@ import java.util.stream.Stream;
 public class TeamBob extends Bot {
     private final GameStateLogger gameStateLogger;
     private Set<Position> unseenPositions = new HashSet<>();
+    private Set<Position> enemySpawnPointPositions = new HashSet<>();
+    
 
     public TeamBob() {
         super("Example Bot");
@@ -53,6 +55,8 @@ public class TeamBob extends Bot {
         moves.addAll(doExplore(gameState, nextPositions, moves, assignedPlayerDestinations));
         
         updateUnseenLocations(gameState);
+        updateEnemySpawnPointLocations(gameState);
+        moves.addAll(doAttack(gameState, assignedPlayerDestinations, nextPositions));
         
         
 
@@ -180,6 +184,18 @@ public class TeamBob extends Bot {
         return exploreMoves;
     }
     
+    private void updateEnemySpawnPointLocations(final GameState gameState) {
+        enemySpawnPointPositions.addAll(gameState.getSpawnPoints().stream()
+                .filter(spawnPoint -> !spawnPoint.getOwner().equals(getId()))
+                .map(spawnPoint -> spawnPoint.getPosition())
+                .collect(Collectors.toList()));
+
+        enemySpawnPointPositions.removeAll(gameState.getRemovedSpawnPoints().stream()
+                .filter(spawnPoint -> !spawnPoint.getOwner().equals(getId()))
+                .map(spawnPoint -> spawnPoint.getPosition())
+                .collect(Collectors.toList()));
+    }
+    
     private Stream<Position> getSurroundingPositions(final GameState gameState, final Position position, final int distance) {
         Stream<Position> positions = Arrays.stream(Direction.values())
                 .flatMap(direction -> IntStream.rangeClosed(1, distance)
@@ -202,7 +218,24 @@ public class TeamBob extends Bot {
         }
     }
     
-    
+    private List<Move> doAttack(final GameState gameState, final Map<Player, Position> assignedPlayerDestinations,
+            final List<Position> nextPositions) {
+List<Move> attackMoves = new ArrayList<>();
+
+Set<Player> players = gameState.getPlayers().stream()
+.filter(player -> isMyPlayer(player))
+.filter(player -> !assignedPlayerDestinations.containsKey(player.getId()))
+.collect(Collectors.toSet());
+System.out.println(players.size() + " players available to attack");
+
+List<Route> attackRoutes = generateRoutes(gameState, players, enemySpawnPointPositions);
+
+Collections.sort(attackRoutes);
+attackMoves.addAll(assignRoutes(gameState, assignedPlayerDestinations, nextPositions, attackRoutes));
+
+System.out.println(attackMoves.size() + " players attacking");
+return attackMoves;
+}
 
 
     /*
