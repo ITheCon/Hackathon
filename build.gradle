@@ -1,0 +1,40 @@
+plugins {
+    id "java"
+    id "application"
+}
+
+group "com.scottlogic.hackathon-contestant"
+version "1.0-SNAPSHOT"
+
+task printProps {
+    doFirst {
+        println mavenProxyUrl
+    }
+}
+
+repositories {
+    if(project.hasProperty('mavenProxyUrl')){
+        maven {
+            url mavenProxyUrl
+        }
+    } else{
+        mavenCentral()
+    }
+
+    flatDir {
+        dirs "libs"
+    }
+}
+
+dependencies {
+    testCompile group: "junit", name: "junit", version: "4.11"
+    compile name: "game-1.0-SNAPSHOT"
+    compile name: "client-1.0-SNAPSHOT-all"
+}
+
+sourceCompatibility = 1.9
+mainClassName = project.hasProperty('mainClass') ? project.mainClass : 'com.contestantbots.team.ExampleBot'
+
+run {
+    standardInput = System.in
+}
