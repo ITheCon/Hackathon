@@ -1,13 +1,23 @@
 package com.contestantbots.team;
 
-import com.contestantbots.util.GameStateLogger;
+import com.contestantbots.util.*;
 import com.scottlogic.hackathon.client.Client;
 import com.scottlogic.hackathon.game.Bot;
+import com.scottlogic.hackathon.game.Direction;
 import com.scottlogic.hackathon.game.GameState;
+//import com.scottlogic.hackathon.game.Map;
 import com.scottlogic.hackathon.game.Move;
+import com.scottlogic.hackathon.game.Player;
+import com.scottlogic.hackathon.game.Position;
+import com.scottlogic.hackathon.game.Route;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 
 public class ExampleBot extends Bot {
     private final GameStateLogger gameStateLogger;
@@ -20,8 +30,77 @@ public class ExampleBot extends Bot {
     @Override
     public List<Move> makeMoves(final GameState gameState) {
         gameStateLogger.process(gameState);
-        return new ArrayList<>();
+        List<Move> moves = new ArrayList<>();
+        List<Position> nextPositions = new ArrayList<>();
+        Map<Player, Position> assignedPlayerDestinations = new HashMap<>();
+
+        moves.addAll(doExplore(gameState, nextPositions, moves, assignedPlayerDestinations));
+        
+        
+
+        return moves;
     }
+    
+    private List<Move> doExplore(final GameState gameState, final List<Position> nextPositions, List<Move> moves, Map<Player, Position> assignedPlayerDestinations) {
+        List<Move> exploreMoves = new ArrayList<>();
+        moves.addAll(doCollect(gameState, assignedPlayerDestinations, nextPositions));
+        exploreMoves.addAll(gameState.getPlayers().stream()
+                .filter(player -> isMyPlayer(player))
+                .map(player -> doMove(gameState, nextPositions, player))
+                .collect(Collectors.toList()));
+        
+        Set<Position> collectablePositions = gameState.getCollectables().stream()
+                .map(collectable -> collectable.getPosition())
+                .collect(Collectors.toSet());
+        Set<Player> players = gameState.getPlayers().stream()
+                .filter(player -> isMyPlayer(player))
+                .collect(Collectors.toSet());
+        
+        List<Route> collectableRoutes = new ArrayList<>();
+        for (Position collectablePosition : collectablePositions) {
+            for (Player player : players) {
+                int distance = gameState.getMap().distance(player.getPosition(), collectablePosition);
+                Route route = new Route(player, collectablePosition, distance);
+                collectableRoutes.add(route);
+            }
+        }
+        
+        System.out.println(exploreMoves.size() + " players exploring");
+        return exploreMoves;
+    }
+    
+    private Move doMove(final GameState gameState, final List<Position> nextPositions, final Player player) {
+        Direction direction;
+        do {
+            direction = Direction.random();
+        } while (!canMove(gameState, nextPositions, player, direction));
+        return new MoveImpl(player.getId(), direction);
+    }
+    
+
+    private boolean isMyPlayer(final Player player) {
+        return player.getOwner().equals(getId());
+    }
+    
+    private List<Move> doCollect(final GameState gameState, final Map<Player, Position> assignedPlayerDestinations, final List<Position> nextPositions) {
+        List<Move> collectMoves = new ArrayList<>();
+        System.out.println(collectMoves.size() + " players collecting");
+        return collectMoves;
+    }
+    
+    private boolean canMove(final GameState gameState, final List<Position> nextPositions, final Player player, final Direction direction) {
+        Set<Position> outOfBounds = gameState.getOutOfBoundsPositions();
+        Position newPosition = gameState.getMap().getNeighbour(player.getPosition(), direction);
+        if (!nextPositions.contains(newPosition)
+            && !outOfBounds.contains(newPosition)) {
+            nextPositions.add(newPosition);
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
+    
 
 
     /*
