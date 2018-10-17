@@ -1,6 +1,6 @@
-package com.TeamBob.team;
+package com.contestantbots.team;
 
-import com.TeamBob.util.*;
+import com.contestantbots.util.*;
 import com.scottlogic.hackathon.client.Client;
 import com.scottlogic.hackathon.game.Bot;
 import com.scottlogic.hackathon.game.Direction;
@@ -154,7 +154,7 @@ public class TeamBob extends Bot {
     
     private void updateUnseenLocations(final GameState gameState) {
         // assume players can 'see' a distance of 5 squares
-        int visibleDistance = 5;
+        int visibleDistance = 10;
         final Set<Position> visiblePositions = gameState.getPlayers()
                 .stream()
                 .filter(player -> isMyPlayer(player))

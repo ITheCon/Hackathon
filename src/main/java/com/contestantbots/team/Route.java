@@ -1,4 +1,4 @@
-package com.TeamBob.util;
+package com.contestantbots.team;
 
 import com.scottlogic.hackathon.game.Player;
 import com.scottlogic.hackathon.game.Position;
@@ -7,7 +7,7 @@ public class Route implements Comparable<Route> {
     private final Player player;
     private final Position destination;
     private final int distance;
-    public Route(Player player, Position destination, int distance) {
+    Route(Player player, Position destination, int distance) {
         this.player = player;
         this.destination = destination;
         this.distance = distance;
