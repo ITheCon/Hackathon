@@ -11,21 +11,35 @@ import com.scottlogic.hackathon.game.Player;
 import com.scottlogic.hackathon.game.Position;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 
 public class TeamBob extends Bot {
     private final GameStateLogger gameStateLogger;
+    private Set<Position> unseenPositions = new HashSet<>();
 
     public TeamBob() {
         super("Example Bot");
         gameStateLogger = new GameStateLogger(getId());
+    }
+    
+    @Override
+    public void initialise(final GameState gameState) {
+    	 for (int x = 0; x < gameState.getMap().getWidth(); x++) {
+             for (int y = 0; y < gameState.getMap().getHeight(); y++) {
+                 unseenPositions.add(new Position(x, y));
+             }
+         }
     }
 
     @Override
@@ -37,6 +51,8 @@ public class TeamBob extends Bot {
         Map<Player, Position> assignedPlayerDestinations = new HashMap<>();
 
         moves.addAll(doExplore(gameState, nextPositions, moves, assignedPlayerDestinations));
+        
+        updateUnseenLocations(gameState);
         
         
 
@@ -130,6 +146,31 @@ public class TeamBob extends Bot {
                 })
                 .filter(move -> move != null)
                 .collect(Collectors.toList());
+    }
+    
+    private void updateUnseenLocations(final GameState gameState) {
+        // assume players can 'see' a distance of 5 squares
+        int visibleDistance = 5;
+        final Set<Position> visiblePositions = gameState.getPlayers()
+                .stream()
+                .filter(player -> isMyPlayer(player))
+                .map(player -> player.getPosition())
+                .flatMap(playerPosition -> getSurroundingPositions(gameState, playerPosition, visibleDistance))
+                .distinct()
+                .collect(Collectors.toSet());
+
+        // remove any positions that can be seen
+        unseenPositions.removeIf(position -> visiblePositions.contains(position));
+    }
+    
+    private Stream<Position> getSurroundingPositions(final GameState gameState, final Position position, final int distance) {
+        Stream<Position> positions = Arrays.stream(Direction.values())
+                .flatMap(direction -> IntStream.rangeClosed(1, distance)
+                        .mapToObj(currentDistance -> gameState.getMap().getRelativePosition(position, direction, currentDistance)));
+
+        positions = Stream.concat(Stream.of(position), positions);
+
+        return positions;
     }
     
     private boolean canMove(final GameState gameState, final List<Position> nextPositions, final Player player, final Direction direction) {
