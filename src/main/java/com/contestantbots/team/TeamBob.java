@@ -68,7 +68,7 @@ public class TeamBob extends Bot {
                 .collect(Collectors.toList()));
         
         
-        
+        moves.addAll(doExploreUnseen(gameState, assignedPlayerDestinations, nextPositions));
         System.out.println(exploreMoves.size() + " players exploring");
         return exploreMoves;
     }
@@ -161,6 +161,23 @@ public class TeamBob extends Bot {
 
         // remove any positions that can be seen
         unseenPositions.removeIf(position -> visiblePositions.contains(position));
+    }
+    
+    private List<Move> doExploreUnseen(final GameState gameState, final Map<Player, Position> assignedPlayerDestinations, final List<Position> nextPositions) {
+        List<Move> exploreMoves = new ArrayList<>();
+
+        Set<Player> players = gameState.getPlayers().stream()
+                .filter(player -> isMyPlayer(player))
+                .filter(player -> !assignedPlayerDestinations.containsKey(player))
+                .collect(Collectors.toSet());
+
+        List<Route> unseenRoutes = generateRoutes(gameState, players, unseenPositions);
+
+        Collections.sort(unseenRoutes);
+        exploreMoves.addAll(assignRoutes(gameState, assignedPlayerDestinations, nextPositions, unseenRoutes));
+
+        System.out.println(exploreMoves.size() + " players exploring unseen");
+        return exploreMoves;
     }
     
     private Stream<Position> getSurroundingPositions(final GameState gameState, final Position position, final int distance) {
