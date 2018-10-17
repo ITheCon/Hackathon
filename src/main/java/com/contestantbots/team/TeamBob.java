@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,7 @@ public class TeamBob extends Bot {
         gameStateLogger.process(gameState);
         List<Move> moves = new ArrayList<>();
         List<Position> nextPositions = new ArrayList<>();
+        
         Map<Player, Position> assignedPlayerDestinations = new HashMap<>();
 
         moves.addAll(doExplore(gameState, nextPositions, moves, assignedPlayerDestinations));
@@ -49,22 +51,7 @@ public class TeamBob extends Bot {
                 .map(player -> doMove(gameState, nextPositions, player))
                 .collect(Collectors.toList()));
         
-        Set<Position> collectablePositions = gameState.getCollectables().stream()
-                .map(collectable -> collectable.getPosition())
-                .collect(Collectors.toSet());
-        Set<Player> players = gameState.getPlayers().stream()
-                .filter(player -> isMyPlayer(player))
-                .collect(Collectors.toSet());
         
-        List<Route> collectableRoutes = new ArrayList<>();
-        for (Position collectablePosition : collectablePositions) {
-            for (Player player : players) {
-                int distance = gameState.getMap().distance(player.getPosition(), collectablePosition);
-                Route route = new Route(player, collectablePosition, distance);
-                collectableRoutes.add(route);
-            }
-        }
-        Collections.sort(collectableRoutes);
         
         System.out.println(exploreMoves.size() + " players exploring");
         return exploreMoves;
@@ -86,7 +73,63 @@ public class TeamBob extends Bot {
     private List<Move> doCollect(final GameState gameState, final Map<Player, Position> assignedPlayerDestinations, final List<Position> nextPositions) {
         List<Move> collectMoves = new ArrayList<>();
         System.out.println(collectMoves.size() + " players collecting");
+        Set<Position> collectablePositions = gameState.getCollectables().stream()
+                .map(collectable -> collectable.getPosition())
+                .collect(Collectors.toSet());
+        Set<Player> players = gameState.getPlayers().stream()
+                .filter(player -> isMyPlayer(player))
+                .collect(Collectors.toSet());
+        
+        List<Route> collectableRoutes = generateRoutes(gameState, players, collectablePositions);
+        collectMoves.addAll(assignRoutes(gameState, assignedPlayerDestinations, nextPositions, collectableRoutes));
+        for (Position collectablePosition : collectablePositions) {
+            for (Player player : players) {
+                int distance = gameState.getMap().distance(player.getPosition(), collectablePosition);
+                Route route = new Route(player, collectablePosition, distance);
+                collectableRoutes.add(route);
+            }
+        }
+
+        for (Route route : collectableRoutes) {
+            if (!assignedPlayerDestinations.containsKey(route.getPlayer())
+                    && !assignedPlayerDestinations.containsValue(route.getDestination())) {
+                Optional<Direction> direction = gameState.getMap().directionsTowards(route.getPlayer().getPosition(), route.getDestination()).findFirst();
+                if (direction.isPresent() && canMove(gameState, nextPositions, route.getPlayer(), direction.get())) {
+                    collectMoves.add(new MoveImpl(route.getPlayer().getId(), direction.get()));
+                    assignedPlayerDestinations.put(route.getPlayer(), route.getDestination());
+                }
+            }
+        }
+        
+        Collections.sort(collectableRoutes);
         return collectMoves;
+    }
+    
+    private List<Route> generateRoutes(final GameState gameState, Set<Player> players, Set<Position> destinations) {
+        List<Route> routes = new ArrayList<>();
+        for (Position destination : destinations) {
+            for (Player player : players) {
+                int distance = gameState.getMap().distance(player.getPosition(), destination);
+                Route route = new Route(player, destination, distance);
+                routes.add(route);
+            }
+        }
+        return routes;
+    }
+    
+    private List<Move> assignRoutes(final GameState gameState, final Map<Player, Position> assignedPlayerDestinations, final List<Position> nextPositions, List<Route> routes) {
+        return routes.stream()
+                .filter(route -> !assignedPlayerDestinations.containsKey(route.getPlayer())&& !assignedPlayerDestinations.containsValue(route.getDestination()))
+                .map(route -> {
+                    Optional<Direction> direction = gameState.getMap().directionsTowards(route.getPlayer().getPosition(), route.getDestination()).findFirst();
+                    if (direction.isPresent() && canMove(gameState, nextPositions, route.getPlayer(), direction.get())) {
+                        assignedPlayerDestinations.put(route.getPlayer(), route.getDestination());
+                        return new MoveImpl(route.getPlayer().getId(), direction.get());
+                    }
+                    return null;
+                })
+                .filter(move -> move != null)
+                .collect(Collectors.toList());
     }
     
     private boolean canMove(final GameState gameState, final List<Position> nextPositions, final Player player, final Direction direction) {
