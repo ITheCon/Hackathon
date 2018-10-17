@@ -9,9 +9,9 @@ import com.scottlogic.hackathon.game.GameState;
 import com.scottlogic.hackathon.game.Move;
 import com.scottlogic.hackathon.game.Player;
 import com.scottlogic.hackathon.game.Position;
-import com.scottlogic.hackathon.game.Route;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,10 +19,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 
-public class ExampleBot extends Bot {
+public class TeamBob extends Bot {
     private final GameStateLogger gameStateLogger;
 
-    public ExampleBot() {
+    public TeamBob() {
         super("Example Bot");
         gameStateLogger = new GameStateLogger(getId());
     }
@@ -64,6 +64,7 @@ public class ExampleBot extends Bot {
                 collectableRoutes.add(route);
             }
         }
+        Collections.sort(collectableRoutes);
         
         System.out.println(exploreMoves.size() + " players exploring");
         return exploreMoves;
@@ -150,7 +151,7 @@ public class ExampleBot extends Bot {
                 "--debug",
 
                 // Use this class as the 'main' Bot
-                "--className", ExampleBot.class.getName()
+                "--className", TeamBob.class.getName()
         };
 
         Client.main(args);

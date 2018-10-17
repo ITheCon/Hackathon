@@ -1,3 +1,5 @@
+package com.contestantbots.util;
+
 import com.scottlogic.hackathon.game.Player;
 import com.scottlogic.hackathon.game.Position;
 
