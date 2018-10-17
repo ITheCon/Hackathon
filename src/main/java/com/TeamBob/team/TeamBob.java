@@ -1,6 +1,6 @@
-package com.contestantbots.team;
+package com.TeamBob.team;
 
-import com.contestantbots.util.*;
+import com.TeamBob.util.*;
 import com.scottlogic.hackathon.client.Client;
 import com.scottlogic.hackathon.game.Bot;
 import com.scottlogic.hackathon.game.Direction;

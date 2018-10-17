@@ -1,4 +1,4 @@
-package com.contestantbots.util;
+package com.TeamBob.util;
 
 import com.scottlogic.hackathon.game.Player;
 import com.scottlogic.hackathon.game.Position;
